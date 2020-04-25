@@ -1,0 +1,57 @@
+---
+title: "coauthor_network"
+author: "LMM"
+date: "9 de septiembre de 2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+library(tidyverse)
+library(igraph)
+library(ggraph)
+library(bib2df)
+library(visNetwork)
+```
+
+```{r}
+items <- bib2df('My Collection.bib')
+```
+
+
+```{r}
+edge_list <- items$AUTHOR %>% 
+  purrr::map(combn, m = 2) %>% 
+  flatten_chr() %>% 
+  matrix(ncol = 2, byrow = TRUE) %>% 
+  data.frame()
+
+g <- graph_from_data_frame(edge_list, directed = FALSE) 
+
+E(g)$weight <- 1
+
+g <- simplify(g, edge.attr.comb="sum")
+```
+
+```{r}
+ggraph(g) +
+  geom_edge_link(aes(width = weight)) +
+  geom_node_point()
+```
+
+
+```{r}
+gvis <- toVisNetworkData(g)
+gvis$edges$value <- gvis$edges$weight
+
+visNetwork(nodes = gvis$nodes, edges = gvis$edges) %>% 
+  visEdges(physics = FALSE) %>% 
+  visInteraction(navigationButtons = TRUE)
+
+```
+
